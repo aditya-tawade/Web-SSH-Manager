@@ -1,4 +1,4 @@
-# Antigravity SSH
+# UnifiedSSH
 
 <div align="center">
   <img src="https://img.shields.io/badge/Next.js-14+-black?style=for-the-badge&logo=next.js" alt="Next.js" />
@@ -13,12 +13,15 @@ A **secure, web-based SSH management system** that lets you connect to remote se
 
 ## ✨ Features
 
-- 🔐 **Secure Authentication** - ENV-based login with JWT tokens
-- 🖥️ **Browser Terminal** - Full xterm.js terminal with WebSocket streaming  
+- 🔐 **Role-Based Access** - Admin, Operator, and Viewer roles
+- 🛡️ **Two-Factor Authentication** - TOTP-based 2FA with Google Authenticator
+- 🖥️ **Multi-Tab Terminal** - Multiple SSH sessions in tabs
 - 🔒 **Encrypted Storage** - AES-256 encryption for SSH private keys
-- ✅ **Connection Validation** - Verify SSH credentials before saving
-- 🎨 **Modern UI** - Dark-themed dashboard with smooth animations
-- 🐳 **Docker Ready** - One-command deployment with Docker Compose
+- 📂 **SFTP File Manager** - Browse, upload, download files
+- ⚡ **Quick Commands** - Save and execute frequently-used commands
+- 📊 **Audit Logs** - Track who connected to which server and when
+- 🔍 **Search & Shortcuts** - Find servers fast with keyboard shortcuts
+- 🐳 **Docker Ready** - One-command deployment
 
 ## 🚀 Quick Start
 
@@ -28,7 +31,7 @@ A **secure, web-based SSH management system** that lets you connect to remote se
 - MongoDB (local or cloud)
 - Docker & Docker Compose (optional)
 
-### Local Development
+### Installation
 
 ```bash
 # Clone the repository
@@ -40,39 +43,39 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your settings
+# Edit .env with your MongoDB URI and secrets
 
 # Start development server
 npm run dev
 ```
 
-Visit `http://localhost:3000` to access the dashboard.
+### First-Time Setup
 
-### Docker Deployment
+1. Visit `http://localhost:3000`
+2. You'll be redirected to the **Setup Wizard**
+3. Create your admin account
+4. Log in and start managing servers!
 
-```bash
-# Configure environment
-cp .env.example .env
+### Enable 2FA (Optional but Recommended)
 
-# Start with Docker Compose
-docker-compose up --build
-```
+1. Go to **User Management** in the sidebar
+2. Click the shield icon next to your user
+3. Scan the QR code with Google Authenticator
+4. Enter the 6-digit code to verify
 
 ## ⚙️ Configuration
 
 Create a `.env` file based on `.env.example`:
 
 ```env
-# Authentication
-AUTH_USERNAME=admin
-AUTH_PASSWORD=your_secure_password
-JWT_SECRET=your_jwt_secret_here
-
 # Database
 MONGODB_URI=mongodb://localhost:27017/ssh-server
 
-# Encryption (32 characters for AES-256)
-ENCRYPTION_KEY=your_32_character_encryption_key
+# JWT Secret (generate a random string)
+JWT_SECRET=your_jwt_secret_here_change_this
+
+# Encryption Key (exactly 32 characters for AES-256)
+ENCRYPTION_KEY=12345678901234567890123456789012
 ```
 
 ## 📁 Project Structure
@@ -80,24 +83,80 @@ ENCRYPTION_KEY=your_32_character_encryption_key
 ```
 ├── app/                    # Next.js App Router
 │   ├── api/               # API Routes
-│   │   ├── auth/          # Authentication endpoints
-│   │   └── servers/       # Server CRUD endpoints
+│   │   ├── auth/          # Authentication
+│   │   ├── users/         # User management + 2FA
+│   │   ├── servers/       # Server CRUD + ping
+│   │   ├── commands/      # Quick commands
+│   │   ├── groups/        # Server groups
+│   │   ├── audit/         # Audit logs
+│   │   └── setup/         # First-time setup
 │   ├── login/             # Login page
-│   └── terminal/          # Terminal page
+│   ├── setup/             # Setup wizard
+│   ├── terminal/          # Multi-tab terminal
+│   ├── commands/          # Quick commands page
+│   ├── users/             # User management
+│   ├── audit/             # Audit logs viewer
+│   └── files/             # SFTP file manager
 ├── components/            # React components
-├── lib/                   # Utilities (db, encryption)
+├── lib/                   # Utilities
 ├── models/                # Mongoose models
-├── server.js              # Custom server with WebSocket
-├── Dockerfile             # Docker configuration
-└── docker-compose.yml     # Docker Compose setup
+└── server.js              # WebSocket server
 ```
 
-## 🔒 Security
+## 🔒 Security Features
 
-- Private keys are **AES-256 encrypted** before storage
-- Keys are **never exposed** to the frontend after saving
-- JWT tokens stored in **HTTP-only cookies**
-- All routes protected via middleware
+| Feature | Description |
+|---------|-------------|
+| **2FA** | TOTP-based two-factor authentication |
+| **RBAC** | Role-based access control (admin/operator/viewer) |
+| **Encrypted Keys** | AES-256 encryption for SSH private keys |
+| **Audit Logs** | Track all user activities |
+| **Secure Sessions** | JWT tokens in HTTP-only cookies |
+
+## ⌨️ Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `⌘/Ctrl + K` | Focus search |
+| `⌘/Ctrl + N` | Add new server |
+| `⌘/Ctrl + H` | Toggle history |
+| `Escape` | Close modals |
+
+## 🔑 2FA Recovery
+
+If you lose access to your authenticator app, you have two recovery options:
+
+### Option 1: Recovery Codes
+
+When you enable 2FA, 10 one-time recovery codes are generated. Save these somewhere safe!
+
+- At login, enter a recovery code instead of the 6-digit TOTP token
+- Format: `XXXX-XXXX` (e.g., `A1B2-C3D4`)
+- Each code can only be used once
+
+### Option 2: CLI Reset Script (Server Access Required)
+
+If you have server access, run this command to disable 2FA:
+
+```bash
+node scripts/reset-2fa.js <username>
+
+# Example:
+node scripts/reset-2fa.js admin
+```
+
+This will disable 2FA for the user. They can log in with just their password and re-enable 2FA.
+
+### Option 3: Direct Database Access
+
+Connect to MongoDB and run:
+
+```javascript
+db.users.updateOne(
+  { username: "admin" },
+  { $set: { totpEnabled: false, totpSecret: null, recoveryCodes: [] } }
+)
+```
 
 ## 🤝 Contributing
 
@@ -119,4 +178,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ssh2](https://github.com/mscdex/ssh2) - SSH client
 - [Next.js](https://nextjs.org/) - React framework
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [Lucide](https://lucide.dev/) - Icons
+- [otplib](https://github.com/yeojz/otplib) - TOTP authentication

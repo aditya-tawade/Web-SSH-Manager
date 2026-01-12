@@ -3,10 +3,11 @@
 import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 import '@xterm/xterm/css/xterm.css';
 import { io } from 'socket.io-client';
 
-export default function SSHScanner({ serverId }) {
+export default function SSHScanner({ serverId, sessionId }) {
     const terminalRef = useRef(null);
     const xtermRef = useRef(null);
     const socketRef = useRef(null);
@@ -25,10 +26,13 @@ export default function SSHScanner({ serverId }) {
             if (!fitAddon || !term || !socket) return;
             try {
                 fitAddon.fit();
-                socket.emit('ssh-resize', {
-                    cols: term.cols,
-                    rows: term.rows
-                });
+                // Sync backend size
+                if (term.cols > 0 && term.rows > 0) {
+                    socket.emit('ssh-resize', {
+                        cols: term.cols,
+                        rows: term.rows
+                    });
+                }
             } catch (e) {
                 console.warn('Resize fit failed:', e);
             }
@@ -55,16 +59,24 @@ export default function SSHScanner({ serverId }) {
 
             fitAddon = new FitAddon();
             term.loadAddon(fitAddon);
+            term.loadAddon(new WebLinksAddon());
             term.open(terminalRef.current);
 
-            try {
-                fitAddon.fit();
-            } catch (e) {
-                console.warn('Initial fit failed:', e);
-            }
+            // Small delay to ensure DOM is ready for fit
+            setTimeout(() => {
+                try {
+                    fitAddon.fit();
+                    handleResize(); // Sync initial size
+                } catch (e) {
+                    console.warn('Initial fit failed:', e);
+                }
+            }, 50);
 
             xtermRef.current = term;
             fitAddonRef.current = fitAddon;
+
+            // Focus terminal on click
+            terminalRef.current.addEventListener('click', () => term.focus());
 
             term.writeln('\x1b[33m⚡ Initializing SSH Tunnel...\x1b[0m');
 
@@ -117,8 +129,8 @@ export default function SSHScanner({ serverId }) {
     }, [serverId]);
 
     return (
-        <div className="w-full h-full bg-[#0a0a0a] rounded-xl overflow-hidden border border-neutral-800 shadow-2xl">
-            <div ref={terminalRef} className="w-full h-full p-2" />
+        <div className="w-full h-full bg-[#0a0a0a] rounded-xl overflow-hidden border border-neutral-800 shadow-2xl p-2">
+            <div ref={terminalRef} className="w-full h-full" />
         </div>
     );
 }

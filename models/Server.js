@@ -22,6 +22,11 @@ const ServerSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please provide the private key.'],
     },
+    group: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Group',
+        default: null,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

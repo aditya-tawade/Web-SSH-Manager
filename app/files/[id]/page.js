@@ -1,15 +1,15 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Terminal as TerminalIcon, Shield } from 'lucide-react';
+import { ChevronLeft, FolderOpen, Shield } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
-const SSHTerminal = dynamic(() => import('@/components/Terminal'), {
+const FileManager = dynamic(() => import('@/components/FileManager'), {
     ssr: false,
-    loading: () => <div className="w-full h-full flex items-center justify-center bg-neutral-950 text-neutral-500">Initializing Terminal...</div>
+    loading: () => <div className="w-full h-full flex items-center justify-center bg-neutral-950 text-neutral-500">Initializing File Manager...</div>
 });
 
-export default function TerminalPage() {
+export default function FilesPage() {
     const { id } = useParams();
     const router = useRouter();
 
@@ -25,24 +25,24 @@ export default function TerminalPage() {
                     </button>
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-                            <TerminalIcon className="text-primary w-5 h-5" />
+                            <FolderOpen className="text-primary w-5 h-5" />
                         </div>
-                        <h1 className="font-semibold text-lg">SSH Terminal Session</h1>
+                        <h1 className="font-semibold text-lg">SFTP File Manager</h1>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs font-medium text-neutral-500 bg-neutral-800/50 px-3 py-1.5 rounded-full border border-neutral-700">
                     <Shield className="w-3 h-3 text-green-500" />
-                    Encrypted Tunnel Active
+                    Secure Connection
                 </div>
             </header>
 
-            <main className="flex-1 p-4 bg-neutral-950 relative">
-                <SSHTerminal serverId={id} />
+            <main className="flex-1 p-4 bg-neutral-950 overflow-hidden">
+                <FileManager serverId={id} />
             </main>
 
             <footer className="h-10 border-t border-neutral-800 bg-neutral-900/20 px-6 flex items-center text-[10px] text-neutral-600 font-mono tracking-wider uppercase">
-                Connected via UnifiedSSH Gateway v1.0.0 // Session ID: {id}
+                SFTP Session // Server ID: {id}
             </footer>
         </div>
     );

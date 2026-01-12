@@ -1,4 +1,4 @@
-# Contributing to Antigravity SSH
+# Contributing to UnifiedSSH
 
 Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
 

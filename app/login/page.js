@@ -1,17 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { Terminal, Loader2, Shield, Key } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Lock, User, Terminal, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [formData, setFormData] = useState({ username: '', password: '', totpToken: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [requires2FA, setRequires2FA] = useState(false);
     const router = useRouter();
 
-    const handleLogin = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -20,10 +20,15 @@ export default function LoginPage() {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify(formData),
             });
-
             const data = await res.json();
+
+            if (data.requires2FA) {
+                setRequires2FA(true);
+                setLoading(false);
+                return;
+            }
 
             if (data.success) {
                 router.push('/');
@@ -31,62 +36,71 @@ export default function LoginPage() {
                 setError(data.message || 'Login failed');
             }
         } catch (err) {
-            setError('An error occurred. Please try again.');
+            setError('An error occurred');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 shadow-2xl">
-                    <div className="flex flex-col items-center mb-8">
-                        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 border border-primary/20">
-                            <Terminal className="w-8 h-8 text-primary" />
-                        </div>
-                        <h1 className="text-2xl font-bold text-white">Antigravity SSH</h1>
-                        <p className="text-neutral-400 text-sm mt-1">Sign in to manage your servers</p>
+                {/* Logo */}
+                <div className="text-center mb-10">
+                    <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20">
+                        <Terminal className="w-10 h-10" />
                     </div>
+                    <h1 className="text-3xl font-bold mb-2">UnifiedSSH</h1>
+                    <p className="text-neutral-400">Secure Server Management</p>
+                </div>
 
-                    <form onSubmit={handleLogin} className="space-y-6">
+                {/* Login Form */}
+                <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">Username</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <User className="h-5 w-5 text-neutral-500" />
-                                </div>
+                            <label className="text-sm font-medium text-neutral-400 block mb-2">Username</label>
+                            <input
+                                required
+                                type="text"
+                                placeholder="Enter username"
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 focus:border-primary outline-none transition-all"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-neutral-400 block mb-2">Password</label>
+                            <input
+                                required
+                                type="password"
+                                placeholder="Enter password"
+                                className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 focus:border-primary outline-none transition-all"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            />
+                        </div>
+
+                        {requires2FA && (
+                            <div className="bg-primary/10 border border-primary/30 rounded-xl p-4">
+                                <label className="text-sm font-medium text-primary flex items-center gap-2 mb-2">
+                                    <Shield className="w-4 h-4" />
+                                    Two-Factor Authentication
+                                </label>
                                 <input
+                                    required
                                     type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="block w-full pl-10 pr-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                                    placeholder="admin"
-                                    required
+                                    placeholder="Enter 6-digit code"
+                                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 focus:border-primary outline-none transition-all text-center font-mono text-lg tracking-widest"
+                                    value={formData.totpToken}
+                                    onChange={(e) => setFormData({ ...formData, totpToken: e.target.value })}
+                                    maxLength={6}
                                 />
                             </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">Password</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-neutral-500" />
-                                </div>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-10 pr-3 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </div>
-                        </div>
+                        )}
 
                         {error && (
-                            <div className="text-red-500 text-sm bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                            <div className="text-red-500 text-sm bg-red-500/10 border border-red-500/20 p-4 rounded-xl">
                                 {error}
                             </div>
                         )}
@@ -94,21 +108,22 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+                            className="w-full bg-primary hover:bg-primary/90 text-white px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                         >
                             {loading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <><Loader2 className="w-5 h-5 animate-spin" /> Authenticating...</>
+                            ) : requires2FA ? (
+                                <><Shield className="w-5 h-5" /> Verify & Sign In</>
                             ) : (
-                                <>
-                                    Connect Session
-                                    <Terminal className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                                </>
+                                <><Key className="w-5 h-5" /> Sign In</>
                             )}
                         </button>
                     </form>
                 </div>
-                <p className="text-center text-neutral-600 text-xs mt-8">
-                    &copy; {new Date().getFullYear()} Antigravity SSH. Open Source Management.
+
+                {/* Footer */}
+                <p className="text-center text-neutral-600 text-sm mt-8">
+                    Secure • Encrypted • Open Source
                 </p>
             </div>
         </div>
