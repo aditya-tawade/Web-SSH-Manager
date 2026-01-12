@@ -6,7 +6,7 @@ import * as OTPAuth from 'otpauth';
 import { SignJWT } from 'jose';
 import { logAudit } from '@/lib/audit';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
+import { JWT_SECRET } from '@/lib/auth';
 
 export async function POST(request) {
     await dbConnect();

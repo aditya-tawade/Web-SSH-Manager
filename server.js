@@ -7,6 +7,9 @@ const mongoose = require('mongoose');
 const CryptoJS = require('crypto-js');
 const dotenv = require('dotenv');
 
+const jwt = require('jsonwebtoken');
+const cookie = require('cookie');
+
 dotenv.config();
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -14,6 +17,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const port = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
 // Encryption secret (should match lib/encryption.js)
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default_secret_key_32_chars_long!!';
@@ -33,6 +37,15 @@ const ServerSchema = new mongoose.Schema({
 });
 
 const MongoServer = mongoose.models.Server || mongoose.model('Server', ServerSchema);
+
+// User model for permission checks
+const UserSchema = new mongoose.Schema({
+    username: String,
+    role: String,
+    allowedServers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Server' }],
+});
+
+const MongoUser = mongoose.models.User || mongoose.model('User', UserSchema);
 
 // Audit Log model for tracking SSH connections
 const AuditLogSchema = new mongoose.Schema({
@@ -55,6 +68,27 @@ async function logAudit(data) {
     }
 }
 
+// Access check helper
+async function checkAccess(socket, serverId) {
+    const { user } = socket;
+    if (!user) return false;
+
+    // Admin has access to all servers
+    if (user.role === 'admin') return true;
+
+    try {
+        const userId = user.userId || user.sub;
+        const fullUser = await MongoUser.findById(userId);
+        if (!fullUser) return false;
+
+        // Check if server is in allowedServers list
+        return (fullUser.allowedServers || []).some(id => id.toString() === serverId.toString());
+    } catch (error) {
+        console.error('Access check error:', error);
+        return false;
+    }
+}
+
 app.prepare().then(() => {
     const server = createServer((req, res) => {
         const parsedUrl = parse(req.url, true);
@@ -65,8 +99,26 @@ app.prepare().then(() => {
         path: '/api/ssh/socket',
     });
 
+    // Auth Middleware for Socket.io
+    io.use((socket, nextMiddleware) => {
+        const cookies = cookie.parse(socket.handshake.headers.cookie || '');
+        const token = cookies['auth-token'];
+
+        if (!token) {
+            return nextMiddleware(new Error('Authentication error: No token provided'));
+        }
+
+        jwt.verify(token, JWT_SECRET, (err, decoded) => {
+            if (err) {
+                return nextMiddleware(new Error('Authentication error: Invalid token'));
+            }
+            socket.user = decoded;
+            nextMiddleware();
+        });
+    });
+
     io.on('connection', (socket) => {
-        console.log('New WebSocket connection:', socket.id);
+        console.log('New WebSocket connection:', socket.id, 'User:', socket.user?.username);
         let sshConn = null;
         let connectedServer = null;
 
@@ -74,6 +126,12 @@ app.prepare().then(() => {
             try {
                 if (!mongoose.connection.readyState) {
                     await mongoose.connect(process.env.MONGODB_URI);
+                }
+
+                // Check access
+                if (!(await checkAccess(socket, serverId))) {
+                    socket.emit('ssh-error', 'Access denied: You are not authorized for this server');
+                    return;
                 }
 
                 const serverInfo = await MongoServer.findById(serverId);
@@ -92,6 +150,8 @@ app.prepare().then(() => {
 
                     // Log SSH connection
                     logAudit({
+                        userId: socket.user?.userId,
+                        username: socket.user?.username,
                         action: 'ssh_connect',
                         serverId: serverInfo._id.toString(),
                         serverName: serverInfo.name,
@@ -136,27 +196,17 @@ app.prepare().then(() => {
             }
         });
 
-        socket.on('disconnect', () => {
-            console.log('User disconnected:', socket.id);
-            if (sshConn) {
-                sshConn.end();
-
-                // Log SSH disconnect
-                if (connectedServer) {
-                    logAudit({
-                        action: 'ssh_disconnect',
-                        serverId: connectedServer._id.toString(),
-                        serverName: connectedServer.name,
-                        ipAddress: socket.handshake.address,
-                    });
-                }
-            }
-        });
 
         socket.on('sftp-list', async ({ serverId, path }) => {
             try {
                 if (!mongoose.connection.readyState) {
                     await mongoose.connect(process.env.MONGODB_URI);
+                }
+
+                // Check access
+                if (!(await checkAccess(socket, serverId))) {
+                    socket.emit('sftp-error', 'Access denied');
+                    return;
                 }
 
                 const serverInfo = await MongoServer.findById(serverId);
@@ -209,6 +259,12 @@ app.prepare().then(() => {
             try {
                 if (!mongoose.connection.readyState) {
                     await mongoose.connect(process.env.MONGODB_URI);
+                }
+
+                // Check access
+                if (!(await checkAccess(socket, serverId))) {
+                    socket.emit('sftp-error', 'Access denied');
+                    return;
                 }
 
                 const serverInfo = await MongoServer.findById(serverId);
@@ -270,6 +326,12 @@ app.prepare().then(() => {
                     await mongoose.connect(process.env.MONGODB_URI);
                 }
 
+                // Check access
+                if (!(await checkAccess(socket, serverId))) {
+                    socket.emit('sftp-error', 'Access denied');
+                    return;
+                }
+
                 const serverInfo = await MongoServer.findById(serverId);
                 if (!serverInfo) {
                     socket.emit('sftp-error', 'Server not found');
@@ -321,6 +383,16 @@ app.prepare().then(() => {
         socket.on('disconnect', () => {
             console.log('User disconnected:', socket.id);
             if (sshConn) sshConn.end();
+            if (connectedServer) {
+                logAudit({
+                    userId: socket.user?.userId,
+                    username: socket.user?.username,
+                    action: 'ssh_disconnect',
+                    serverId: connectedServer._id.toString(),
+                    serverName: connectedServer.name,
+                    ipAddress: socket.handshake.address,
+                });
+            }
         });
     });
 

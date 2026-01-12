@@ -17,6 +17,9 @@ export default function UsersPage() {
     const [deleteUserId, setDeleteUserId] = useState(null);
     const [disable2FAUserId, setDisable2FAUserId] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [allServers, setAllServers] = useState([]);
+    const [showAccessModal, setShowAccessModal] = useState(null); // stores user object
+    const [updatingAccess, setUpdatingAccess] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -34,16 +37,23 @@ export default function UsersPage() {
                 return;
             }
 
-            // Fetch users
-            const res = await fetch('/api/users');
-            const data = await res.json();
-            if (data.success) {
-                setUsers(data.data);
-            } else if (res.status === 403) {
-                router.push('/');
+            // Fetch users and servers
+            const [usersRes, serversRes] = await Promise.all([
+                fetch('/api/users'),
+                fetch('/api/servers')
+            ]);
+
+            const usersData = await usersRes.json();
+            const serversData = await serversRes.json();
+
+            if (usersData.success) {
+                setUsers(usersData.data);
+            }
+            if (serversData.success) {
+                setAllServers(serversData.data);
             }
         } catch (err) {
-            console.error('Failed to fetch users');
+            console.error('Failed to fetch data');
         } finally {
             setLoading(false);
         }
@@ -145,6 +155,28 @@ export default function UsersPage() {
         }
     };
 
+    const handleUpdateAccess = async (userId, allowedServers) => {
+        setUpdatingAccess(true);
+        try {
+            const res = await fetch(`/api/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ allowedServers }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setShowAccessModal(null);
+                fetchUsers();
+            } else {
+                setError(data.message || 'Failed to update access');
+            }
+        } catch (err) {
+            setError('An error occurred');
+        } finally {
+            setUpdatingAccess(false);
+        }
+    };
+
     const confirmDisable2FA = async () => {
         if (!disable2FAUserId) return;
         try {
@@ -212,6 +244,7 @@ export default function UsersPage() {
                                     <tr>
                                         <th className="text-left p-4">Username</th>
                                         <th className="text-left p-4">Role</th>
+                                        <th className="text-left p-4">Assigned Servers</th>
                                         <th className="text-center p-4">2FA</th>
                                         <th className="text-left p-4">Last Login</th>
                                         <th className="text-right p-4">Actions</th>
@@ -225,6 +258,22 @@ export default function UsersPage() {
                                                 <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${roleColors[user.role]}`}>
                                                     {user.role}
                                                 </span>
+                                            </td>
+                                            <td className="p-4">
+                                                {user.role === 'admin' ? (
+                                                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-neutral-800 border border-neutral-700 rounded-lg text-xs font-medium text-neutral-300 w-fit">
+                                                        <Shield className="w-3 h-3 text-primary" />
+                                                        All Servers
+                                                    </span>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setShowAccessModal(user)}
+                                                        className="inline-flex items-center gap-2 px-3 py-1 bg-neutral-800 border border-neutral-700 rounded-lg text-xs font-medium text-neutral-300 hover:border-primary/50 transition-all w-fit"
+                                                    >
+                                                        <Shield className="w-3 h-3 text-primary" />
+                                                        {user.allowedServers?.length || 0} Servers
+                                                    </button>
+                                                )}
                                             </td>
                                             <td className="p-4 text-center">
                                                 {user.totpEnabled ? (
@@ -249,12 +298,23 @@ export default function UsersPage() {
                                                 {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
                                             </td>
                                             <td className="p-4 text-right">
-                                                <button
-                                                    onClick={() => setDeleteUserId(user._id)}
-                                                    className="p-2 text-neutral-400 hover:text-red-500"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {user.role !== 'admin' && (
+                                                        <button
+                                                            onClick={() => setShowAccessModal(user)}
+                                                            className="p-2 text-neutral-400 hover:text-primary transition-colors"
+                                                            title="Manage Server Access"
+                                                        >
+                                                            <Shield className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setDeleteUserId(user._id)}
+                                                        className="p-2 text-neutral-400 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -280,6 +340,17 @@ export default function UsersPage() {
                                                 <span className="text-neutral-600">Disabled</span>
                                             )}
                                         </div>
+                                        {user.role === 'admin' ? (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-neutral-800 rounded-lg text-[10px] text-neutral-400 border border-neutral-700 w-fit">
+                                                <Shield className="w-2.5 h-2.5 text-primary" />
+                                                All Servers
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-neutral-800 rounded-lg text-[10px] text-neutral-400 border border-neutral-700 w-fit">
+                                                <Shield className="w-2.5 h-2.5 text-primary" />
+                                                {user.allowedServers?.length || 0} Servers
+                                            </div>
+                                        )}
                                         <div className="flex items-center gap-2">
                                             {user.totpEnabled ? (
                                                 <button
@@ -294,6 +365,14 @@ export default function UsersPage() {
                                                     className="p-2 bg-neutral-800 text-neutral-400 rounded-lg"
                                                 >
                                                     <ShieldOff className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {user.role !== 'admin' && (
+                                                <button
+                                                    onClick={() => setShowAccessModal(user)}
+                                                    className="p-2 bg-primary/10 text-primary rounded-lg"
+                                                >
+                                                    <Shield className="w-4 h-4" />
                                                 </button>
                                             )}
                                             <button
@@ -478,6 +557,86 @@ export default function UsersPage() {
                                 className="w-full bg-primary text-white py-2.5 rounded-xl font-bold disabled:opacity-50"
                             >
                                 Verify & Enable
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Manage Access Modal */}
+            {showAccessModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <Shield className="text-primary w-6 h-6" /> Manage Access
+                                </h2>
+                                <p className="text-xs text-neutral-500 mt-1">Assign servers to <b>{showAccessModal.username}</b></p>
+                            </div>
+                            <button onClick={() => setShowAccessModal(null)} className="text-neutral-500 hover:text-white p-2">✕</button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto flex-1 space-y-3">
+                            {allServers.length === 0 ? (
+                                <div className="text-center py-8 text-neutral-500">
+                                    <ShieldOff className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                                    <p>No servers found to assign.</p>
+                                </div>
+                            ) : (
+                                allServers.map((server) => {
+                                    const isAssigned = (showAccessModal.allowedServers || []).some(id => id.toString() === server._id.toString());
+                                    return (
+                                        <label
+                                            key={server._id}
+                                            className={`
+                                                flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer
+                                                ${isAssigned ? 'bg-primary/10 border-primary/50 text-white' : 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:border-neutral-700'}
+                                            `}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isAssigned ? 'bg-primary text-white' : 'bg-neutral-800 text-neutral-500'}`}>
+                                                    <Shield className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-semibold">{server.name}</div>
+                                                    <div className="text-xs opacity-60 font-mono">{server.host}</div>
+                                                </div>
+                                            </div>
+                                            <input
+                                                type="checkbox"
+                                                className="hidden"
+                                                checked={isAssigned}
+                                                onChange={(e) => {
+                                                    const currentAllowed = showAccessModal.allowedServers || [];
+                                                    const updated = e.target.checked
+                                                        ? [...currentAllowed, server._id.toString()]
+                                                        : currentAllowed.filter(id => id.toString() !== server._id.toString());
+                                                    setShowAccessModal({ ...showAccessModal, allowedServers: updated });
+                                                }}
+                                            />
+                                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isAssigned ? 'bg-primary border-primary' : 'border-neutral-800'}`}>
+                                                {isAssigned && <Check className="w-4 h-4 text-white" />}
+                                            </div>
+                                        </label>
+                                    );
+                                })
+                            )}
+                        </div>
+
+                        <div className="p-6 border-t border-neutral-800 bg-neutral-900/50 flex gap-3">
+                            <button
+                                onClick={() => setShowAccessModal(null)}
+                                className="flex-1 px-4 py-3 rounded-xl border border-neutral-800 hover:bg-neutral-800 transition-colors font-medium text-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleUpdateAccess(showAccessModal._id, showAccessModal.allowedServers)}
+                                disabled={updatingAccess}
+                                className="flex-[2] bg-primary hover:bg-primary/90 text-white px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 text-sm shadow-lg shadow-primary/20"
+                            >
+                                {updatingAccess ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ShieldCheck className="w-4 h-4" /> Save Changes</>}
                             </button>
                         </div>
                     </div>

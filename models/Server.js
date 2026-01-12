@@ -33,4 +33,8 @@ const ServerSchema = new mongoose.Schema({
     },
 });
 
+if (process.env.NODE_ENV === 'development') {
+    delete mongoose.models.Server;
+}
+
 export default mongoose.models.Server || mongoose.model('Server', ServerSchema);

@@ -37,6 +37,20 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    allowedServers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Server',
+    }],
+}, { timestamps: true });
+
+UserSchema.pre('save', function (next) {
+    if (!this.allowedServers) this.allowedServers = [];
+    next();
 });
+
+// Force delete model in development to ensure schema updates are applied
+if (process.env.NODE_ENV === 'development') {
+    delete mongoose.models.User;
+}
 
 export default mongoose.models.User || mongoose.model('User', UserSchema);

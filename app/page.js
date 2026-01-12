@@ -278,6 +278,9 @@ export default function Dashboard() {
                             <Terminal className="w-6 h-6" />
                         </button>
                         <h1 className="text-lg md:text-xl font-semibold whitespace-nowrap hidden sm:block">Active Servers</h1>
+                        {userRole === 'admin' && (
+                            <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-primary/30">Admin</span>
+                        )}
                         {/* Search */}
                         <div className="relative flex-1 max-w-[150px] sm:max-w-xs md:max-w-md">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />

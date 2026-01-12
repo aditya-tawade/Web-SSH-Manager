@@ -3,14 +3,11 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
-// Helper to check admin role from request headers
-function isAdmin(request) {
-    return request.headers.get('x-user-role') === 'admin';
-}
+import { isAdmin } from '@/lib/auth';
 
 export async function GET(request) {
     // Only admins can list users
-    if (!isAdmin(request)) {
+    if (!await isAdmin(request)) {
         return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
     }
 
@@ -25,7 +22,7 @@ export async function GET(request) {
 
 export async function POST(request) {
     // Only admins can create users
-    if (!isAdmin(request)) {
+    if (!await isAdmin(request)) {
         return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
     }
 

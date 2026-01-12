@@ -3,11 +3,28 @@ import dbConnect from '@/lib/db';
 import Server from '@/models/Server';
 import { encrypt } from '@/lib/encryption';
 import { Client } from 'ssh2';
+import { getUserId, isAdmin } from '@/lib/auth';
+import User from '@/models/User';
 
-export async function GET() {
+export async function GET(request) {
     await dbConnect();
     try {
-        const servers = await Server.find({}).sort({ createdAt: -1 });
+        const isUserAdmin = await isAdmin(request);
+        let query = {};
+
+        if (!isUserAdmin) {
+            const userId = await getUserId(request);
+            if (!userId) {
+                return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+            }
+            const user = await User.findById(userId);
+            if (!user) {
+                return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+            }
+            query = { _id: { $in: (user.allowedServers || []).map(id => id.toString()) } };
+        }
+
+        const servers = await Server.find(query).sort({ createdAt: -1 });
         // Don't leak the keys even encrypted to the list frontend
         const safeServers = servers.map(s => ({
             _id: s._id,

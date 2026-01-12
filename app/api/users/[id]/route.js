@@ -3,14 +3,11 @@ import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
-// Helper to check admin role from request headers
-function isAdmin(request) {
-    return request.headers.get('x-user-role') === 'admin';
-}
+import { isAdmin } from '@/lib/auth';
 
 export async function DELETE(request, context) {
     // Only admins can delete users
-    if (!isAdmin(request)) {
+    if (!await isAdmin(request)) {
         return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
     }
 
@@ -29,7 +26,7 @@ export async function DELETE(request, context) {
 
 export async function PUT(request, context) {
     // Only admins can update users
-    if (!isAdmin(request)) {
+    if (!await isAdmin(request)) {
         return NextResponse.json({ success: false, message: 'Admin access required' }, { status: 403 });
     }
 
@@ -37,10 +34,11 @@ export async function PUT(request, context) {
     try {
         const { id } = await context.params;
         const body = await request.json();
-        const { role, password } = body;
+        const { role, password, allowedServers } = body;
 
         const updateData = {};
         if (role) updateData.role = role;
+        if (allowedServers) updateData.allowedServers = allowedServers;
         if (password) {
             const salt = await bcrypt.genSalt(12);
             updateData.password = await bcrypt.hash(password, salt);

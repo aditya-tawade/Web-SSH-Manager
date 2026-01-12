@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-
-const JWT_SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'fallback_secret'
-);
+import { getPayload } from './lib/auth';
 
 export async function middleware(request) {
     const { pathname } = request.nextUrl;
@@ -41,11 +37,15 @@ export async function middleware(request) {
     }
 
     try {
-        const { payload } = await jwtVerify(token, JWT_SECRET);
+        const payload = await getPayload(request);
+
+        if (!payload) {
+            return NextResponse.redirect(new URL('/login', request.url));
+        }
 
         // Add user info to headers for API routes
         const requestHeaders = new Headers(request.headers);
-        requestHeaders.set('x-user-id', payload.userId);
+        requestHeaders.set('x-user-id', payload.userId || payload.sub);
         requestHeaders.set('x-user-role', payload.role);
         requestHeaders.set('x-username', payload.username);
 
