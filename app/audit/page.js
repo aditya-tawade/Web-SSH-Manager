@@ -61,7 +61,7 @@ export default function AuditLogsPage() {
                         <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
                             <FileText className="text-primary w-5 h-5" />
                         </div>
-                        <h1 className="font-semibold text-lg">Audit Logs</h1>
+                        <h1 className="font-semibold text-base md:text-lg">Audit Logs</h1>
                     </div>
                 </div>
 
@@ -97,26 +97,28 @@ export default function AuditLogsPage() {
                 ) : (
                     <div className="space-y-2">
                         {logs.map((log, index) => (
-                            <div key={index} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 flex items-center gap-4">
-                                <div className="w-10 h-10 bg-neutral-800 rounded-lg flex items-center justify-center">
-                                    {actionIcons[log.action] || <Shield className="w-4 h-4" />}
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium">{log.username}</span>
-                                        <span className="text-neutral-500">•</span>
-                                        <span className="text-sm text-neutral-400">{actionLabels[log.action] || log.action}</span>
+                            <div key={index} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                                <div className="flex items-center gap-4 w-full sm:w-auto">
+                                    <div className="w-10 h-10 bg-neutral-800 rounded-lg flex items-center justify-center shrink-0">
+                                        {actionIcons[log.action] || <Shield className="w-4 h-4" />}
                                     </div>
-                                    {log.serverName && (
-                                        <p className="text-sm text-neutral-500 mt-0.5">Server: {log.serverName}</p>
-                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-medium truncate max-w-[120px]">{log.username}</span>
+                                            <span className="text-neutral-500 hidden sm:inline">•</span>
+                                            <span className="text-xs md:text-sm text-neutral-400">{actionLabels[log.action] || log.action}</span>
+                                        </div>
+                                        {log.serverName && (
+                                            <p className="text-xs md:text-sm text-neutral-500 mt-0.5 truncate">Server: {log.serverName}</p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="text-right text-sm text-neutral-500">
+                                <div className="sm:text-right text-xs md:text-sm text-neutral-500 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-800/50 flex flex-row sm:flex-col justify-between items-center sm:items-end gap-2">
                                     <div className="flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
-                                        {new Date(log.timestamp).toLocaleString()}
+                                        {new Date(log.timestamp).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}
                                     </div>
-                                    {log.ipAddress && <p className="text-xs">{log.ipAddress}</p>}
+                                    {log.ipAddress && <p className="text-[10px] sm:text-xs opacity-70">{log.ipAddress}</p>}
                                 </div>
                             </div>
                         ))}

@@ -46,16 +46,16 @@ export default function LoginPage() {
         <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
             <div className="w-full max-w-md">
                 {/* Logo */}
-                <div className="text-center mb-10">
-                    <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20">
-                        <Terminal className="w-10 h-10" />
+                <div className="text-center mb-6 md:mb-10">
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-primary/20">
+                        <Terminal className="w-8 h-8 md:w-10 md:h-10" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-2">UnifiedSSH</h1>
-                    <p className="text-neutral-400">Secure Server Management</p>
+                    <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">UnifiedSSH</h1>
+                    <p className="text-sm md:text-base text-neutral-400">Secure Server Management</p>
                 </div>
 
                 {/* Login Form */}
-                <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8">
+                <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="text-sm font-medium text-neutral-400 block mb-2">Username</label>

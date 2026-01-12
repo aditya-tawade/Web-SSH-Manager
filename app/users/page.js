@@ -170,24 +170,24 @@ export default function UsersPage() {
 
     return (
         <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
-            <header className="h-16 border-b border-neutral-800 flex items-center justify-between px-6 bg-neutral-900/50">
-                <div className="flex items-center gap-4">
+            <header className="h-16 border-b border-neutral-800 flex items-center justify-between px-4 md:px-6 bg-neutral-900/50">
+                <div className="flex items-center gap-2 md:gap-4">
                     <button onClick={() => router.push('/')} className="p-2 hover:bg-neutral-800 rounded-lg text-neutral-400">
-                        <ChevronLeft className="w-6 h-6" />
+                        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
                     </button>
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+                    <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center hidden sm:flex">
                             <Users className="text-primary w-5 h-5" />
                         </div>
-                        <h1 className="font-semibold text-lg">User Management</h1>
+                        <h1 className="font-semibold text-base md:text-lg">Users</h1>
                     </div>
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2"
+                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 md:px-5 md:py-2.5 rounded-xl font-semibold flex items-center gap-2 text-sm md:text-base"
                 >
-                    <Plus className="w-5 h-5" />
-                    Add User
+                    <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                    <span>Add User</span>
                 </button>
             </header>
 
@@ -204,60 +204,112 @@ export default function UsersPage() {
                         <p className="text-neutral-500 mt-2">Add users to enable role-based access control.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="text-xs text-neutral-400 uppercase bg-neutral-900/50">
-                                <tr>
-                                    <th className="text-left p-4">Username</th>
-                                    <th className="text-left p-4">Role</th>
-                                    <th className="text-center p-4">2FA</th>
-                                    <th className="text-left p-4">Last Login</th>
-                                    <th className="text-right p-4">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.map((user) => (
-                                    <tr key={user._id} className="border-b border-neutral-800 hover:bg-neutral-900/30">
-                                        <td className="p-4 font-medium">{user.username}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${roleColors[user.role]}`}>
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-center">
+                    <div className="space-y-4">
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="text-xs text-neutral-400 uppercase bg-neutral-900/50">
+                                    <tr>
+                                        <th className="text-left p-4">Username</th>
+                                        <th className="text-left p-4">Role</th>
+                                        <th className="text-center p-4">2FA</th>
+                                        <th className="text-left p-4">Last Login</th>
+                                        <th className="text-right p-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.map((user) => (
+                                        <tr key={user._id} className="border-b border-neutral-800 hover:bg-neutral-900/30">
+                                            <td className="p-4 font-medium">{user.username}</td>
+                                            <td className="p-4">
+                                                <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${roleColors[user.role]}`}>
+                                                    {user.role}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                {user.totpEnabled ? (
+                                                    <button
+                                                        onClick={() => setDisable2FAUserId(user._id)}
+                                                        className="inline-flex items-center gap-1 text-green-400 hover:text-red-400"
+                                                        title="Click to disable"
+                                                    >
+                                                        <ShieldCheck className="w-4 h-4" />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setup2FA(user._id)}
+                                                        className="inline-flex items-center gap-1 text-neutral-500 hover:text-primary"
+                                                        title="Setup 2FA"
+                                                    >
+                                                        <ShieldOff className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                            <td className="p-4 text-neutral-500 text-sm">
+                                                {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <button
+                                                    onClick={() => setDeleteUserId(user._id)}
+                                                    className="p-2 text-neutral-400 hover:text-red-500"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="md:hidden space-y-3">
+                            {users.map((user) => (
+                                <div key={user._id} className="bg-neutral-900 border border-neutral-800 rounded-xl p-4 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="font-bold text-lg">{user.username}</div>
+                                        <span className={`px-2 py-1 rounded-lg text-[10px] font-medium border uppercase tracking-wider ${roleColors[user.role]}`}>
+                                            {user.role}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <div className="text-neutral-500">
+                                            2FA: {user.totpEnabled ? (
+                                                <span className="text-green-500 font-medium">Enabled</span>
+                                            ) : (
+                                                <span className="text-neutral-600">Disabled</span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
                                             {user.totpEnabled ? (
                                                 <button
                                                     onClick={() => setDisable2FAUserId(user._id)}
-                                                    className="inline-flex items-center gap-1 text-green-400 hover:text-red-400"
-                                                    title="Click to disable"
+                                                    className="p-2 bg-green-500/10 text-green-400 rounded-lg"
                                                 >
                                                     <ShieldCheck className="w-4 h-4" />
                                                 </button>
                                             ) : (
                                                 <button
                                                     onClick={() => setup2FA(user._id)}
-                                                    className="inline-flex items-center gap-1 text-neutral-500 hover:text-primary"
-                                                    title="Setup 2FA"
+                                                    className="p-2 bg-neutral-800 text-neutral-400 rounded-lg"
                                                 >
                                                     <ShieldOff className="w-4 h-4" />
                                                 </button>
                                             )}
-                                        </td>
-                                        <td className="p-4 text-neutral-500 text-sm">
-                                            {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
-                                        </td>
-                                        <td className="p-4 text-right">
                                             <button
                                                 onClick={() => setDeleteUserId(user._id)}
-                                                className="p-2 text-neutral-400 hover:text-red-500"
+                                                className="p-2 bg-red-500/10 text-red-500 rounded-lg"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                        </div>
+                                    </div>
+                                    <div className="text-[10px] text-neutral-600 font-mono">
+                                        Last Login: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
             </main>

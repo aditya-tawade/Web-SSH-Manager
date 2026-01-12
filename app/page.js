@@ -18,6 +18,7 @@ export default function Dashboard() {
     const [connectionHistory, setConnectionHistory] = useState([]);
     const [showHistory, setShowHistory] = useState(false);
     const [userRole, setUserRole] = useState(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const searchRef = useRef(null);
     const router = useRouter();
 
@@ -177,9 +178,20 @@ export default function Dashboard() {
     );
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-white flex">
+        <div className="min-h-screen bg-neutral-950 text-white flex overflow-hidden">
+            {/* Mobile Sidebar Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
-            <aside className="w-64 border-r border-neutral-800 flex flex-col hidden md:flex">
+            <aside className={`
+                fixed inset-y-0 left-0 w-64 border-r border-neutral-800 bg-neutral-950 z-50 transition-transform duration-300 transform md:relative md:translate-x-0
+                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
                 <div className="p-6 border-b border-neutral-800 flex items-center gap-3">
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                         <Terminal className="text-white w-5 h-5" />
@@ -255,20 +267,27 @@ export default function Dashboard() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto">
-                <header className="h-20 border-b border-neutral-800 flex items-center justify-between px-8 bg-neutral-950/50 backdrop-blur-md sticky top-0 z-10">
-                    <div className="flex items-center gap-4">
-                        <h1 className="text-xl font-semibold">Active Servers</h1>
+            <main className="flex-1 overflow-auto w-full">
+                <header className="h-20 border-b border-neutral-800 flex items-center justify-between px-4 md:px-8 bg-neutral-950/50 backdrop-blur-md sticky top-0 z-30">
+                    <div className="flex items-center gap-2 md:gap-4">
+                        {/* Mobile Menu Toggle */}
+                        <button
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="p-2 hover:bg-neutral-800 rounded-lg text-neutral-400 md:hidden"
+                        >
+                            <Terminal className="w-6 h-6" />
+                        </button>
+                        <h1 className="text-lg md:text-xl font-semibold whitespace-nowrap hidden sm:block">Active Servers</h1>
                         {/* Search */}
-                        <div className="relative">
+                        <div className="relative flex-1 max-w-[150px] sm:max-w-xs md:max-w-md">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
                             <input
                                 ref={searchRef}
                                 type="text"
-                                placeholder="Search servers... (⌘K)"
+                                placeholder="Search... (⌘K)"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-64 bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
+                                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-10 pr-4 py-2 text-sm focus:border-primary outline-none transition-all"
                             />
                             {searchQuery && (
                                 <button
@@ -282,14 +301,15 @@ export default function Dashboard() {
                     </div>
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                        className="bg-primary hover:bg-primary/90 text-white p-2.5 sm:px-5 sm:py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/20"
+                        title="Add Server"
                     >
                         <Plus className="w-5 h-5" />
-                        Add Server
+                        <span className="hidden sm:inline">Add Server</span>
                     </button>
                 </header>
 
-                <div className="p-8">
+                <div className="p-4 md:p-8">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-64 text-neutral-500">
                             <Loader2 className="w-10 h-10 animate-spin mb-4" />
@@ -383,75 +403,75 @@ export default function Dashboard() {
 
             {/* Add Server Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
-                            <h2 className="text-xl font-bold flex items-center gap-2">
-                                <Plus className="text-primary w-6 h-6" /> Add Remote Server
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-2xl sm:rounded-3xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 my-auto">
+                        <div className="p-4 sm:p-6 border-b border-neutral-800 flex items-center justify-between">
+                            <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                                <Plus className="text-primary w-5 h-5 sm:w-6 sm:h-6" /> Add Server
                             </h2>
-                            <button onClick={() => setShowAddModal(false)} className="text-neutral-500 hover:text-white">✕</button>
+                            <button onClick={() => setShowAddModal(false)} className="text-neutral-500 hover:text-white p-2">✕</button>
                         </div>
 
-                        <form onSubmit={handleAddServer} className="p-8 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-neutral-400">Server Name</label>
+                        <form onSubmit={handleAddServer} className="p-4 sm:p-8 space-y-4 sm:space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                                <div className="space-y-1 sm:space-y-2">
+                                    <label className="text-xs sm:text-sm font-medium text-neutral-400">Server Name</label>
                                     <input
                                         required
                                         type="text"
                                         placeholder="Production Web #1"
-                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 focus:border-primary outline-none transition-all"
+                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 sm:py-2.5 focus:border-primary outline-none transition-all text-sm"
                                         value={newServer.name}
                                         onChange={(e) => setNewServer({ ...newServer, name: e.target.value })}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-neutral-400">Host / IP Address</label>
+                                <div className="space-y-1 sm:space-y-2">
+                                    <label className="text-xs sm:text-sm font-medium text-neutral-400">Host / IP</label>
                                     <input
                                         required
                                         type="text"
-                                        placeholder="192.168.1.1 or example.com"
-                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 focus:border-primary outline-none transition-all"
+                                        placeholder="192.168.1.1"
+                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 sm:py-2.5 focus:border-primary outline-none transition-all text-sm"
                                         value={newServer.host}
                                         onChange={(e) => setNewServer({ ...newServer, host: e.target.value })}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-neutral-400">SSH Username</label>
+                                <div className="space-y-1 sm:space-y-2">
+                                    <label className="text-xs sm:text-sm font-medium text-neutral-400">SSH User</label>
                                     <input
                                         required
                                         type="text"
                                         placeholder="root"
-                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 focus:border-primary outline-none transition-all"
+                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 sm:py-2.5 focus:border-primary outline-none transition-all text-sm"
                                         value={newServer.username}
                                         onChange={(e) => setNewServer({ ...newServer, username: e.target.value })}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-neutral-400">Port</label>
+                                <div className="space-y-1 sm:space-y-2">
+                                    <label className="text-xs sm:text-sm font-medium text-neutral-400">Port</label>
                                     <input
                                         type="number"
                                         placeholder="22"
-                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 focus:border-primary outline-none transition-all"
+                                        className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 sm:py-2.5 focus:border-primary outline-none transition-all text-sm"
                                         value={newServer.port}
                                         onChange={(e) => setNewServer({ ...newServer, port: parseInt(e.target.value) })}
                                     />
                                 </div>
                             </div>
 
-                            <div className="space-y-3">
-                                <label className="text-sm font-medium text-neutral-400 flex items-center justify-between">
-                                    <span>SSH Private Key</span>
-                                    <span className="text-xs text-neutral-600 flex items-center gap-1">
-                                        <ShieldCheck className="w-3 h-3" /> Encrypted at rest
+                            <div className="space-y-2 sm:space-y-3">
+                                <label className="text-xs sm:text-sm font-medium text-neutral-400 flex items-center justify-between">
+                                    <span>Private Key</span>
+                                    <span className="text-[10px] sm:text-xs text-neutral-600 flex items-center gap-1">
+                                        <ShieldCheck className="w-3 h-3" /> Secure
                                     </span>
                                 </label>
 
-                                <div className="flex gap-3">
+                                <div className="flex gap-2 sm:gap-3">
                                     <label className="flex-1 cursor-pointer">
-                                        <div className="flex items-center justify-center gap-2 px-4 py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-xl transition-colors">
-                                            <Upload className="w-4 h-4" />
-                                            <span className="text-sm font-medium">Upload Key File</span>
+                                        <div className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 sm:py-3 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-xl transition-colors">
+                                            <Upload className="w-3.5 h-3.5" />
+                                            <span className="text-xs sm:text-sm font-medium uppercase tracking-tight">Upload</span>
                                         </div>
                                         <input
                                             type="file"
@@ -473,15 +493,15 @@ export default function Dashboard() {
 
                                 <textarea
                                     required
-                                    rows={6}
-                                    placeholder="-----BEGIN OPENSSH PRIVATE KEY-----... (paste or upload)"
-                                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 focus:border-primary outline-none transition-all font-mono text-xs"
+                                    rows={4}
+                                    placeholder="Paste private key here..."
+                                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 focus:border-primary outline-none transition-all font-mono text-[10px] sm:text-xs"
                                     value={newServer.privateKey}
                                     onChange={(e) => setNewServer({ ...newServer, privateKey: e.target.value })}
                                 />
                                 {newServer.privateKey && (
-                                    <p className="text-xs text-green-500 flex items-center gap-1">
-                                        <ShieldCheck className="w-3 h-3" /> Key loaded ({newServer.privateKey.length} characters)
+                                    <p className="text-[10px] sm:text-xs text-green-500 flex items-center gap-1">
+                                        <ShieldCheck className="w-3 h-3" /> Loaded ({newServer.privateKey.length} chars)
                                     </p>
                                 )}
                             </div>
@@ -493,23 +513,23 @@ export default function Dashboard() {
                                 </div>
                             )}
 
-                            <div className="flex gap-4 pt-2">
+                            <div className="flex flex-col sm:flex-row gap-3 pt-4">
                                 <button
                                     type="button"
                                     onClick={() => setShowAddModal(false)}
-                                    className="flex-1 px-4 py-3 rounded-xl border border-neutral-800 hover:bg-neutral-800 transition-colors font-medium"
+                                    className="order-2 sm:order-1 flex-1 px-4 py-2.5 sm:py-3 rounded-xl border border-neutral-800 hover:bg-neutral-800 transition-colors font-medium text-sm"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={adding}
-                                    className="flex-[2] bg-primary hover:bg-primary/90 text-white px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                                    className="order-1 sm:order-2 flex-[2] bg-primary hover:bg-primary/90 text-white px-4 py-2.5 sm:py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 text-sm"
                                 >
                                     {adding ? (
-                                        <><Loader2 className="w-5 h-5 animate-spin" /> Testing Connection...</>
+                                        <><Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" /> Verifying...</>
                                     ) : (
-                                        <><ShieldCheck className="w-5 h-5" /> Save & Verify</>
+                                        <><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" /> Save Server</>
                                     )}
                                 </button>
                             </div>

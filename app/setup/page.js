@@ -52,12 +52,12 @@ export default function SetupPage() {
         <div className="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
             <div className="w-full max-w-lg">
                 {/* Logo */}
-                <div className="text-center mb-12">
-                    <div className="w-20 h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-primary/20">
-                        <Terminal className="w-10 h-10" />
+                <div className="text-center mb-8 md:mb-12">
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-primary rounded-3xl flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-xl shadow-primary/20">
+                        <Terminal className="w-8 h-8 md:w-10 md:h-10" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-2">Welcome to UnifiedSSH</h1>
-                    <p className="text-neutral-400">Let's set up your secure SSH management system</p>
+                    <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Welcome</h1>
+                    <p className="text-sm md:text-base text-neutral-400">Secure SSH management setup</p>
                 </div>
 
                 {/* Progress */}
@@ -89,7 +89,7 @@ export default function SetupPage() {
                 )}
 
                 {step === 2 && (
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8">
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8">
                         <h2 className="text-2xl font-bold mb-2 text-center">Create Admin Account</h2>
                         <p className="text-neutral-400 text-center mb-8">
                             This will be your primary login for the dashboard
