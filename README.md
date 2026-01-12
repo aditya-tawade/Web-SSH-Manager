@@ -32,8 +32,8 @@ A **secure, web-based SSH management system** that lets you connect to remote se
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/antigravity-ssh.git
-cd antigravity-ssh
+git clone https://github.com/aditya-tawade/Web-SSH-Manager.git
+cd Web-SSH-Manager
 
 # Install dependencies
 npm install
