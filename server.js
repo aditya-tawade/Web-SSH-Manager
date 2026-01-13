@@ -38,12 +38,17 @@ const ServerSchema = new mongoose.Schema({
 
 const MongoServer = mongoose.models.Server || mongoose.model('Server', ServerSchema);
 
-// User model for permission checks
+// User model for permission checks (must match models/User.js to prevent schema conflicts)
 const UserSchema = new mongoose.Schema({
     username: String,
+    password: String,
     role: String,
+    totpSecret: String,
+    totpEnabled: Boolean,
+    recoveryCodes: [String],
+    lastLogin: Date,
     allowedServers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Server' }],
-});
+}, { timestamps: true });
 
 const MongoUser = mongoose.models.User || mongoose.model('User', UserSchema);
 

@@ -25,6 +25,10 @@ export async function POST(request) {
         }
 
         // Verify password
+        if (!user.password) {
+            console.error('User password is undefined for:', username);
+            return NextResponse.json({ success: false, message: 'Account error - please recreate your account' }, { status: 500 });
+        }
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return NextResponse.json({ success: false, message: 'Invalid credentials' }, { status: 401 });
