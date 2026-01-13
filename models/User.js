@@ -43,9 +43,8 @@ const UserSchema = new mongoose.Schema({
     }],
 }, { timestamps: true });
 
-UserSchema.pre('save', function (next) {
+UserSchema.pre('save', async function () {
     if (!this.allowedServers) this.allowedServers = [];
-    next();
 });
 
 // Force delete model in development to ensure schema updates are applied
